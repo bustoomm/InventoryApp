@@ -1,0 +1,17 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+
+<h2>Login</h2>
+
+<form method="post">
+    <p><input type="text" name="username" placeholder="Username" /></p>
+    <p><input type="password" name="password" placeholder="Password" /></p>
+    <button type="submit">Login</button>
+</form>
+
+@if (ViewBag.Error != null)
+{
+    <p style="color:red;">@ViewBag.Error</p>
+}

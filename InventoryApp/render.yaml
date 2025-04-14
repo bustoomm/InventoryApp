@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: inventory-app
+    runtime: dotnet
+    repo: https://github.com/username/repo-lu.git # ganti ini
+    branch: main
+    buildCommand: dotnet publish -c Release -o out
+    startCommand: dotnet out/InventoryApp.dll
+    env: 
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+    plan: free

@@ -1,0 +1,31 @@
+﻿@model InventoryApp.Models.InventoryItem
+
+<h2>Edit Barang</h2>
+
+<form method="post">
+    <input type="hidden" name="Id" value="@Model.Id" />
+
+    <div>
+        <label>Kode Barang:</label>
+        <input type="text" name="ItemCode" value="@Model.ItemCode" required />
+    </div>
+    <div>
+        <label>Nama Barang:</label>
+        <input type="text" name="ItemName" value="@Model.ItemName" required />
+    </div>
+    <div>
+        <label>Jumlah:</label>
+        <input type="number" name="Quantity" value="@Model.Quantity" required />
+    </div>
+    <div>
+        <label>Satuan:</label>
+        <input type="text" name="Unit" value="@Model.Unit" />
+    </div>
+    <div>
+        <label>Lokasi:</label>
+        <input type="text" name="Location" value="@Model.Location" />
+    </div>
+    <button type="submit">Update</button>
+</form>
+
+<a href="/Inventory">Kembali ke daftar</a>

@@ -1,0 +1,14 @@
+﻿@model InventoryApp.Models.InventoryItem
+
+<h2>Yakin mau hapus barang ini?</h2>
+
+<p><strong>Kode:</strong> @Model.ItemCode</p>
+<p><strong>Nama:</strong> @Model.ItemName</p>
+<p><strong>Jumlah:</strong> @Model.Quantity @Model.Unit</p>
+<p><strong>Lokasi:</strong> @Model.Location</p>
+
+<form method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <button type="submit">Ya, Hapus</button>
+    <a href="/Inventory">Batal</a>
+</form>

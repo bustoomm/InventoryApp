@@ -1,0 +1,42 @@
+﻿@model List<InventoryApp.Models.InventoryItem>
+
+<h2>Inventory List</h2>
+<form method="get" action="/Inventory">
+    <input type="text" name="search" placeholder="Cari nama / kode barang..." value="@Context.Request.Query["search"]" />
+    <button type="submit">Cari</button>
+    <a href="/Inventory">Reset</a>
+</form>
+<a href="/Inventory/Create">Tambah Barang</a>
+<a href="/Inventory/ExportExcel">Export ke Excel</a>
+@* <a href="/Inventory/ExportPdf">Export ke PDF</a> *@
+
+<table border="1" cellpadding="10" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Kode</th>
+            <th>Nama</th>
+            <th>Stok</th>
+            <th>Satuan</th>
+            <th>Lokasi</th>
+            <th>Tanggal</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ItemCode</td>
+                <td>@item.ItemName</td>
+                <td>@item.Quantity</td>
+                <td>@item.Unit</td>
+                <td>@item.Location</td>
+                <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <a href="/Inventory/Edit/@item.Id">Edit</a> |
+                    <a href="/Inventory/Delete/@item.Id">Hapus</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

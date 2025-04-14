@@ -1,0 +1,28 @@
+﻿@model List<InventoryApp.Models.InventoryItem>
+
+<h2 style="text-align:center;">Laporan Inventory</h2>
+<table border="1" cellpadding="5" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th>Kode</th>
+            <th>Nama</th>
+            <th>Qty</th>
+            <th>Satuan</th>
+            <th>Lokasi</th>
+            <th>Tanggal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ItemCode</td>
+                <td>@item.ItemName</td>
+                <td>@item.Quantity</td>
+                <td>@item.Unit</td>
+                <td>@item.Location</td>
+                <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
+            </tr>
+        }
+    </tbody>
+</table>
