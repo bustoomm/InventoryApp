@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using InventoryApp.Data;
+using Dapper;
 
 public class AuthController : Controller
 {
@@ -21,15 +22,17 @@ public class AuthController : Controller
     {
         using var conn = _db.GetConnection();
         conn.Open();
-        var cmd = new SqlCommand("SELECT * FROM Users WHERE Username = @u AND Password = @p", conn);
-        cmd.Parameters.AddWithValue("@u", username);
-        cmd.Parameters.AddWithValue("@p", password);
 
-        var reader = cmd.ExecuteReader();
-        if (reader.Read())
+        var user = conn.QueryFirstOrDefault<dynamic>(
+            "SELECT * FROM Users WHERE Username = @Username AND Password = @Password",
+            new { Username = username, Password = password }
+        );
+
+        if (user != null)
         {
-            HttpContext.Session.SetString("username", reader["Username"].ToString());
-            HttpContext.Session.SetString("role", reader["Role"].ToString());
+            // Simpan info user ke session
+            HttpContext.Session.SetString("username", (string)user.Username);
+            HttpContext.Session.SetString("role", (string)user.Role);
 
             return RedirectToAction("Index", "Inventory");
         }

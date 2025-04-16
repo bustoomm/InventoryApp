@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using InventoryApp.Data;
 using InventoryApp.Models;
-using Microsoft.Data.SqlClient;
+using Dapper;
 using System.IO;
 using ClosedXML.Excel;
 using DinkToPdf.Contracts;
@@ -12,7 +12,6 @@ namespace InventoryApp.Controllers
 {
     public class InventoryController : Controller
     {
-        // Define connection
         private readonly Db _db;
         private readonly IConverter _converter;
 
@@ -22,7 +21,6 @@ namespace InventoryApp.Controllers
             _converter = converter;
         }
 
-        // GET: Inventory/Create
         public IActionResult Create()
         {
             if (HttpContext.Session.GetString("role") != "admin")
@@ -31,172 +29,93 @@ namespace InventoryApp.Controllers
             return View();
         }
 
-        // POST: Inventory/Create
         [HttpPost]
         public IActionResult Create(InventoryItem item)
         {
             using (var conn = _db.GetConnection())
             {
                 conn.Open();
-                var cmd = new SqlCommand(@"INSERT INTO InventoryItems 
-            (ItemCode, ItemName, Quantity, Unit, Location) 
-            VALUES (@code, @name, @qty, @unit, @loc)", conn);
+                string query = @"INSERT INTO InventoryItems 
+                                 (ItemCode, ItemName, Quantity, Unit, Location) 
+                                 VALUES (@ItemCode, @ItemName, @Quantity, @Unit, @Location)";
 
-                cmd.Parameters.AddWithValue("@code", item.ItemCode);
-                cmd.Parameters.AddWithValue("@name", item.ItemName);
-                cmd.Parameters.AddWithValue("@qty", item.Quantity);
-                cmd.Parameters.AddWithValue("@unit", item.Unit);
-                cmd.Parameters.AddWithValue("@loc", item.Location);
-
-                cmd.ExecuteNonQuery();
+                conn.Execute(query, item);
             }
 
             return RedirectToAction("Index");
         }
 
-        // GET: List
         public IActionResult Index(string search)
         {
-            var items = new List<InventoryItem>();
-
             using (var conn = _db.GetConnection())
             {
                 conn.Open();
-
                 string query = "SELECT * FROM InventoryItems";
+
                 if (!string.IsNullOrEmpty(search))
                 {
                     query += " WHERE ItemName LIKE @search OR ItemCode LIKE @search";
+                    return View(conn.Query<InventoryItem>(query, new { search = "%" + search + "%" }).ToList());
                 }
 
-                var cmd = new SqlCommand(query, conn);
-
-                if (!string.IsNullOrEmpty(search))
-                {
-                    cmd.Parameters.AddWithValue("@search", "%" + search + "%");
-                }
-
-                var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                {
-                    items.Add(new InventoryItem
-                    {
-                        Id = (int)reader["Id"],
-                        ItemCode = reader["ItemCode"].ToString(),
-                        ItemName = reader["ItemName"].ToString(),
-                        Quantity = (int)reader["Quantity"],
-                        Unit = reader["Unit"].ToString(),
-                        Location = reader["Location"].ToString(),
-                        CreatedAt = (DateTime)reader["CreatedAt"]
-                    });
-                }
+                return View(conn.Query<InventoryItem>(query).ToList());
             }
-
-            return View(items);
         }
 
-
-        // GET: Inventory/Edit/
         public IActionResult Edit(int id)
         {
-            InventoryItem item = null;
-
             using (var conn = _db.GetConnection())
             {
                 conn.Open();
-                var cmd = new SqlCommand("SELECT * FROM InventoryItems WHERE Id = @id", conn);
-                cmd.Parameters.AddWithValue("@id", id);
+                string query = "SELECT * FROM InventoryItems WHERE Id = @id";
+                var item = conn.QueryFirstOrDefault<InventoryItem>(query, new { id });
 
-                var reader = cmd.ExecuteReader();
-                if (reader.Read())
-                {
-                    item = new InventoryItem
-                    {
-                        Id = (int)reader["Id"],
-                        ItemCode = reader["ItemCode"].ToString(),
-                        ItemName = reader["ItemName"].ToString(),
-                        Quantity = (int)reader["Quantity"],
-                        Unit = reader["Unit"].ToString(),
-                        Location = reader["Location"].ToString(),
-                        CreatedAt = (DateTime)reader["CreatedAt"]
-                    };
-                }
+                if (item == null)
+                    return NotFound();
+
+                return View(item);
             }
-
-            if (item == null)
-                return NotFound();
-
-            return View(item);
         }
 
-        // POST: Inventory/Edit/
         [HttpPost]
         public IActionResult Edit(InventoryItem item)
         {
             using (var conn = _db.GetConnection())
             {
                 conn.Open();
-                var cmd = new SqlCommand(@"UPDATE InventoryItems 
-            SET ItemCode = @code, ItemName = @name, Quantity = @qty, 
-                Unit = @unit, Location = @loc 
-            WHERE Id = @id", conn);
-
-                cmd.Parameters.AddWithValue("@id", item.Id);
-                cmd.Parameters.AddWithValue("@code", item.ItemCode);
-                cmd.Parameters.AddWithValue("@name", item.ItemName);
-                cmd.Parameters.AddWithValue("@qty", item.Quantity);
-                cmd.Parameters.AddWithValue("@unit", item.Unit);
-                cmd.Parameters.AddWithValue("@loc", item.Location);
-
-                cmd.ExecuteNonQuery();
+                string query = @"UPDATE InventoryItems 
+                                 SET ItemCode = @ItemCode, ItemName = @ItemName, Quantity = @Quantity, 
+                                     Unit = @Unit, Location = @Location 
+                                 WHERE Id = @Id";
+                conn.Execute(query, item);
             }
 
             return RedirectToAction("Index");
         }
 
-        // GET: Inventory/Delete/
         public IActionResult Delete(int id)
         {
-            InventoryItem item = null;
-
             using (var conn = _db.GetConnection())
             {
                 conn.Open();
-                var cmd = new SqlCommand("SELECT * FROM InventoryItems WHERE Id = @id", conn);
-                cmd.Parameters.AddWithValue("@id", id);
-                var reader = cmd.ExecuteReader();
+                string query = "SELECT * FROM InventoryItems WHERE Id = @id";
+                var item = conn.QueryFirstOrDefault<InventoryItem>(query, new { id });
 
-                if (reader.Read())
-                {
-                    item = new InventoryItem
-                    {
-                        Id = (int)reader["Id"],
-                        ItemCode = reader["ItemCode"].ToString(),
-                        ItemName = reader["ItemName"].ToString(),
-                        Quantity = (int)reader["Quantity"],
-                        Unit = reader["Unit"].ToString(),
-                        Location = reader["Location"].ToString(),
-                        CreatedAt = (DateTime)reader["CreatedAt"]
-                    };
-                }
+                if (item == null)
+                    return NotFound();
+
+                return View(item);
             }
-
-            if (item == null)
-                return NotFound();
-
-            return View(item);
         }
 
-        // POST: Inventory/Delete/
         [HttpPost, ActionName("Delete")]
         public IActionResult DeleteConfirmed(int id)
         {
             using (var conn = _db.GetConnection())
             {
                 conn.Open();
-                var cmd = new SqlCommand("DELETE FROM InventoryItems WHERE Id = @id", conn);
-                cmd.Parameters.AddWithValue("@id", id);
-                cmd.ExecuteNonQuery();
+                string query = "DELETE FROM InventoryItems WHERE Id = @id";
+                conn.Execute(query, new { id });
             }
 
             return RedirectToAction("Index");
@@ -214,19 +133,18 @@ namespace InventoryApp.Controllers
             worksheet.Cell(1, 4).Value = "Satuan";
             worksheet.Cell(1, 5).Value = "Lokasi";
 
-            var conn = _db.GetConnection();
+            using var conn = _db.GetConnection();
             conn.Open();
-            var cmd = new SqlCommand("SELECT * FROM InventoryItems", conn);
-            var reader = cmd.ExecuteReader();
+            var items = conn.Query<InventoryItem>("SELECT * FROM InventoryItems");
 
             int row = 2;
-            while (reader.Read())
+            foreach (var item in items)
             {
-                worksheet.Cell(row, 1).Value = reader["ItemCode"].ToString();
-                worksheet.Cell(row, 2).Value = reader["ItemName"].ToString();
-                worksheet.Cell(row, 3).Value = Convert.ToInt32(reader["Quantity"]);
-                worksheet.Cell(row, 4).Value = reader["Unit"].ToString();
-                worksheet.Cell(row, 5).Value = reader["Location"].ToString();
+                worksheet.Cell(row, 1).Value = item.ItemCode;
+                worksheet.Cell(row, 2).Value = item.ItemName;
+                worksheet.Cell(row, 3).Value = item.Quantity;
+                worksheet.Cell(row, 4).Value = item.Unit;
+                worksheet.Cell(row, 5).Value = item.Location;
                 row++;
             }
 
@@ -237,54 +155,36 @@ namespace InventoryApp.Controllers
             return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Inventory.xlsx");
         }
 
-        
+        public IActionResult ExportPdf()
+        {
+            var items = new List<InventoryItem>();
 
-        //public IActionResult ExportPdf()
-        //{
-        //    var items = new List<InventoryItem>();
+            using (var conn = _db.GetConnection())
+            {
+                conn.Open();
+                string query = "SELECT * FROM InventoryItems";
+                items = conn.Query<InventoryItem>(query).ToList();
+            }
 
-        //    using (var conn = _db.GetConnection())
-        //    {
-        //        conn.Open();
-        //        var cmd = new SqlCommand("SELECT * FROM InventoryItems", conn);
-        //        var reader = cmd.ExecuteReader();
+            var html = this.RenderViewToString("PdfTemplate", items);
 
-        //        while (reader.Read())
-        //        {
-        //            items.Add(new InventoryItem
-        //            {
-        //                Id = (int)reader["Id"],
-        //                ItemCode = reader["ItemCode"].ToString(),
-        //                ItemName = reader["ItemName"].ToString(),
-        //                Quantity = (int)reader["Quantity"],
-        //                Unit = reader["Unit"].ToString(),
-        //                Location = reader["Location"].ToString(),
-        //                CreatedAt = (DateTime)reader["CreatedAt"]
-        //            });
-        //        }
-        //    }
+            var doc = new HtmlToPdfDocument()
+            {
+                GlobalSettings = {
+                    PaperSize = PaperKind.A4,
+                    Orientation = Orientation.Portrait,
+                    DocumentTitle = "Inventory PDF"
+                },
+                Objects = {
+                    new ObjectSettings() {
+                        HtmlContent = html,
+                        WebSettings = { DefaultEncoding = "utf-8" }
+                    }
+                }
+            };
 
-        //    // Render partial view ke string HTML
-        //    var html = this.RenderViewToString("PdfTemplate", items);
-
-        //    var doc = new HtmlToPdfDocument()
-        //    {
-        //        GlobalSettings = {
-        //    PaperSize = PaperKind.A4,
-        //    Orientation = Orientation.Portrait,
-        //    DocumentTitle = "Inventory PDF"
-        //},
-        //        Objects = {
-        //    new ObjectSettings() {
-        //        HtmlContent = html,
-        //        WebSettings = { DefaultEncoding = "utf-8" }
-        //    }
-        //}
-        //    };
-
-        //    var pdf = _converter.Convert(doc);
-        //    return File(pdf, "application/pdf", "Inventory.pdf");
-        //}
-
+            var pdf = _converter.Convert(doc);
+            return File(pdf, "application/pdf", "Inventory.pdf");
+        }
     }
 }
